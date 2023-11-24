@@ -9,7 +9,6 @@
   <q-page padding>
     <q-form
       @submit="onSubmit"
-      @reset="onReset"
       class="q-gutter-md row"
     >
       <q-input
@@ -70,19 +69,37 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed } from 'vue'
+import { defineComponent, ref, computed, onMounted } from 'vue'
 import despesaService from 'src/services/despesas'
 import { useQuasar } from 'quasar'
+import { useRouter, useRoute } from 'vue-router'
 
 export default defineComponent({
   name: 'FormDespesaPage',
   setup () {
     const $q = useQuasar()
+    const router = useRouter()
+    const route = useRoute()
     const descricao = ref('')
     const data = ref('')
     const valor = ref('0')
+    const id = ref('')
 
-    const { post } = despesaService()
+    const { post, getById, update } = despesaService()
+
+    onMounted(async () => {
+      if (route.params.id) {
+        id.value = route.params.id
+        const response = await getById(route.params.id)
+        descricao.value = response.data.descricao
+        let dataBR = new Date(response.data.data)
+        dataBR = dataBR.toLocaleString('pt-BR')
+        data.value = dataBR.replace(',', '')
+        let valorBR = response.data.valor
+        valorBR = valorBR.toLocaleString('pt-br', { minimumFractionDigits: 2 })
+        valor.value = valorBR
+      }
+    })
 
     const onSubmit = async () => {
       try {
@@ -113,15 +130,24 @@ export default defineComponent({
         const bodyRequest = {
           descricao: descricao.value,
           data: dataFormatada.value,
-          valor: valorFormatado.value
+          valor: valorFormatado.value,
+          id: id.value
         }
 
-        const retorno = await post(bodyRequest)
+        const retorno = ref({})
+
+        if (id.value !== '') {
+          retorno.value = await update(bodyRequest)
+        } else {
+          retorno.value = await post(bodyRequest)
+        }
+
         $q.notify({
-          message: retorno.message,
+          message: retorno.value.message,
           color: 'positive',
           icon: 'check'
         })
+        router.push({ path: '/despesa' })
       } catch (error) {
         $q.notify({
           message: error.message,

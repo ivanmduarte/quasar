@@ -20,7 +20,8 @@
             <q-btn color="primary" label="Adicionar despesa" size="sm" href="/formDespesa" />
           </template>
           <template v-slot:body-cell-actions="props">
-            <q-td :props="props">
+            <q-td :props="props" class="q-gutter-sm">
+              <q-btn color="info" icon="edit" label="" dense size="sm" @click="handleEditDespesa(props.row.id)" />
               <q-btn color="negative" icon="delete" label="" dense size="sm" @click="handleDeleteDespesa(props.row.id)" />
             </q-td>
           </template>
@@ -33,11 +34,13 @@
 import { defineComponent, ref, onMounted } from 'vue'
 import despesaService from 'src/services/despesas'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 
 export default defineComponent({
   name: 'DespesaPage',
   setup () {
     const $q = useQuasar()
+    const router = useRouter()
     const rows = ref([])
     const { list, remove } = despesaService()
     const columns = [
@@ -96,11 +99,16 @@ export default defineComponent({
       }
     }
 
+    const handleEditDespesa = (id) => {
+      router.push({ path: `/formDespesa/${id}` })
+    }
+
     return {
       visibleColumns: ['id', 'descricao', 'data', 'valor', 'usuario', 'actions'],
       columns,
       rows,
-      handleDeleteDespesa
+      handleDeleteDespesa,
+      handleEditDespesa
     }
   }
 })
